@@ -18,6 +18,7 @@
 3. 你可以直接创建出来一个控制圆角显示的`DRCornerModel`实例,来控制圆角的各个属性:如`cornerRadius`等,然后直接调用`UIView`的拓展方法`-dr_cornerWithCornerModel:`方法进行圆角化处理;
 
 具体效果在`截图`文件夹下已经给出;
+![适配约束](https://github.com/gitKun/DRCornerView/blob/master/截图/DRCornerExt-Demo1.gif)
 
 
 这里给出第一版中说过的另类的实现方法:
