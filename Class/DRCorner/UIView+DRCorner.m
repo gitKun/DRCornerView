@@ -20,18 +20,53 @@ const NSString *DRCornerModelName = @"DRCORNERMODELNAME";
     model.cornerRadius = self.cornerRadius;
     model.superBGColor = self.superBGColor;
     model.borderColor = self.borderColor;
+    model.lineWidth = self.lineWidth;
     return model;
 }
 
-+ (DRCornerModel *)cornerModelWithRadius:(CGFloat)radius superBGColor:(UIColor *)sBGColor cornerType:(DRRoundCorner)type borderColor:(UIColor *)borderColor {
++ (DRCornerModel *)cornerModelWithRadius:(CGFloat)radius superBGColor:(UIColor *)sBGColor cornerType:(DRRoundCorner)type borderColor:(UIColor *)borderColor lineWidth:(int)lineWidth {
     DRCornerModel *model = [[DRCornerModel alloc] init];
     model.cornerType = type;
     model.cornerRadius = radius;
     model.superBGColor = sBGColor;
     model.borderColor = borderColor;
+    model.lineWidth = lineWidth;
     return model;
 }
 
+/*
+ * 链式调用
+ */
+- (DRCornerModel *(^)(CGFloat))chainedCornerRadius {
+    return ^(CGFloat cornerRadius) {
+        self.cornerRadius = cornerRadius;
+        return self;
+    };
+}
+- (DRCornerModel *(^)(UIColor *))chainedSuperBGColor {
+    return ^(UIColor *color){
+        self.superBGColor = color;
+        return self;
+    };
+}
+- (DRCornerModel *(^)(DRRoundCorner))chainedCornerType {
+    return ^(DRRoundCorner type){
+        self.cornerType = type;
+        return self;
+    };
+}
+- (DRCornerModel *(^)(UIColor *))chainedBorderColor {
+    return ^(UIColor *color){
+        self.borderColor = color;
+        return self;
+    };
+}
+- (DRCornerModel *(^)(int))chainedLineWidth {
+    return ^(int width){
+        self.lineWidth = width;
+        return self;
+    };
+}
 
 @end
 
@@ -82,7 +117,11 @@ const NSString *DRCornerModelName = @"DRCORNERMODELNAME";
         return;
     }
     if (!model.superBGColor) {
-        return;
+        if (self.superview && self.superview.backgroundColor != [UIColor clearColor]) {
+            model.superBGColor = self.superview.backgroundColor;
+        }else {
+            return;
+        }
     }
     if (CGRectEqualToRect(self.bounds, CGRectZero)) {
         return;
@@ -104,11 +143,14 @@ const NSString *DRCornerModelName = @"DRCORNERMODELNAME";
     shapeLayer.fillColor = model.superBGColor.CGColor;
     if (model.borderColor) {
         //CGPathApply
-        CGFloat cornerPathLength = lengthOfCGPath(model.cornerType,model.cornerRadius,cornerBounds.size);
+        CGFloat cornerPathLength = drLengthOfCGPath(model.cornerType,model.cornerRadius,cornerBounds.size);
         CGFloat totolPathLength = 2*(CGRectGetHeight(cornerBounds)+CGRectGetWidth(cornerBounds))+cornerPathLength;
         shapeLayer.strokeStart = (totolPathLength-cornerPathLength)/totolPathLength;
         shapeLayer.strokeEnd = 1.0;
         shapeLayer.strokeColor = model.borderColor.CGColor;
+        if (model.lineWidth > 0) {
+            shapeLayer.lineWidth = model.lineWidth;
+        }
     }
 }
 
@@ -122,12 +164,20 @@ const NSString *DRCornerModelName = @"DRCORNERMODELNAME";
     [self setNeedsDisplay];
 }
 
+- (void)dr_conveniencesCornerWithBGColor:(UIColor *)bgColor {
+    DRCornerModel *model = [DRCornerModel cornerModelWithRadius:(self.bounds.size.width * 0.5) superBGColor:(UIColor *)bgColor cornerType:DRRoundCornerAll borderColor:nil lineWidth:0];
+    objc_setAssociatedObject(self, (__bridge const void * _Nonnull)(DRCornerModelName), model, OBJC_ASSOCIATION_RETAIN);
+    [self registDRCornenrLayer];
+    [self setNeedsDisplay];
+}
+
+
 #pragma mark --- 改写 end
 
 /**
  关于 CGPath 的 length 的计算请参看 http://www.mlsite.net/blog/?p=1312 与 http://stackoverflow.com/questions/6515158/get-info-about-a-cgpath-uibezierpath 在这里简单的计算就能满足要求因此不做过多讨论
  */
-float lengthOfCGPath (DRRoundCorner roundingCorner,CGFloat radius,CGSize size) {
+float drLengthOfCGPath (DRRoundCorner roundingCorner,CGFloat radius,CGSize size) {
     CGFloat totolLength = 0.0;
     switch (roundingCorner) {
         case DRRoundCornerTop:

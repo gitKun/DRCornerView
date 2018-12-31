@@ -1,28 +1,54 @@
 # DRCornerView
-处理视图圆角
 
-第一版位置:
 
-[给视图添加圆角的轻量级方法](https://www.jianshu.com/p/feb471fd00da)
+> 老规矩上图
 
-第一版存在的问题:
+![DRLayoutCornerDemo](./截图/DRLayoutCornerDemo.gif)
+
+![userInTableView](./截图/useInTableView.gif)
+
+
+### 做出的修改
+
+
+1. 修改边框的绘制逻辑：
+	
+	现在使用
+	
+	```
+	[cornerPath addCurveToPoint:fPoint controlPoint1:eControlPoint controlPoint2:fControlPoint];
+	```
+	
+	来添加绘制`RectCorner`。
+	
+	好处是：
+	
+	圆角后添加描边不需要再次计算圆角路径并且添加的描边不会再有超出添加圆角视图的`bounds`这样的BUG(这会导致很多不好的呈现效果)；
+	
+	可以控制每个角的圆角半径(虽然看似用处不大)；
+	
+
+2. 代码调整,支持了链式调用，测试代码如下：
+
+  ```
+  [self.cornerBGView dr_makeCornerBorder:^(DRCornerBorderStyle * _Nonnull style) {
+        style.coverBGColor.equalTo(UIColor.whiteColor)
+        .cornerLineWidth.equalToWidth(lineWidth)
+        .cornerBorderColor.equalTo(UIColor.lightGrayColor)
+        .topLeftRadius
+        .topRightRadius
+        .bottomRightRadius
+        .bottomLeftRadius
+        .equalToWidth(radius);
+    }];
+  ```
+
+3. 测试用例
+	
+	测试用例保存在`example`文件夹中；
+
+
+#### 备注：
+
+ `coverBGColor`非必要参数，这个参数适用于添加圆角处理的view的supView的bgColor为`clearColor`时，传入你实际需要覆盖的颜色；
  
-1. 不能自动给`AutoLayout`出来`view`正确添加圆角;
-2. 反复的添加和移除做圆角处理的`shapeLayer`,存在一定的性能损耗;
-3. 部分`API`设计的不够理想;
-
-现在给出了修改后的第二版:
-
-1. 现在你不需要再为获取`xib`或者约束出来的`view`的`bounds`而头疼了,`UIView+DRCorner`已经不在需要你传入`bounds`了;
-2. 同样的现在不会存在反复添加和移除实现圆角化的`shapeLayer`了;
-3. 你可以直接创建出来一个控制圆角显示的`DRCornerModel`实例,来控制圆角的各个属性:如`cornerRadius`等,然后直接调用`UIView`的拓展方法`-dr_cornerWithCornerModel:`方法进行圆角化处理;
-
-具体效果在`截图`文件夹下已经给出;
-![适配约束](https://github.com/gitKun/DRCornerView/blob/master/截图/DRCornerExt-Demo1.gif)
-
-
-这里给出第一版中说过的另类的实现方法:
-创建一个`UIView`的子类`DRCornerView`,替换`DRCornerView`的`layer`为`CAShapeLayer`,对`shapeLayer`做第一版一样的圆角处理,然后再设置这个`DRCornerView`和要圆角化的`view`保持在同一位置即可(如果被遮挡的`corberedView`有点击或者其他交互事件这时你就需要设置`DRCornerView`的`userInteractionEnabled`为`NO`,以此来将touch事件传递给`corberedView `),具体可见 [DRCornerExt](https://github.com/gitKun/DRCornerView)中的`CornerView`文件夹下的实现;
-
-
-*ps:*你甚至可以重写`DRCornerView`的`-willMoveToSuperview:`方法,将`DRCornerView`设置和`superView`保持一致大小;
